@@ -3,179 +3,399 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>UPI SpendSense</title>
+    <title>UPI SpendSense – Intelligence Dashboard</title>
+    <!-- Import Chart.js for data visualization -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f7f6; margin: 0; padding: 30px; }
-        .dashboard { max-width: 1000px; margin: auto; }
-        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; color: #2c3e50; }
+        /* CSS Variables for a consistent, modern theme */
+        :root {
+            --primary: #1e293b;
+            --accent: #3b82f6;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --success: #10b981;
+            --bg: #f8fafc;
+            --card-bg: #ffffff;
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --border: #e2e8f0;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { background-color: var(--bg); color: var(--text-main); padding: 24px; }
+        .container { max-width: 1200px; margin: 0 auto; }
+
+        /* Header & Upload */
+        header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; padding-bottom: 16px; border-bottom: 1px solid var(--border); }
+        .brand h1 { font-size: 24px; font-weight: 700; color: var(--primary); }
+        .brand p { font-size: 14px; color: var(--text-muted); }
         
-        /* Upload Section */
-        .upload-section { background: white; padding: 15px 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
-        .upload-section input { margin-right: 10px; }
-        .upload-section button { background-color: #3498db; color: white; border: none; padding: 8px 15px; border-radius: 5px; cursor: pointer; font-weight: bold; }
-        .upload-section button:hover { background-color: #2980b9; }
+        .upload-card { background: var(--card-bg); border: 1px solid var(--border); padding: 12px 20px; border-radius: 8px; display: flex; gap: 12px; align-items: center; }
+        button { background: var(--accent); color: white; border: none; padding: 8px 16px; border-radius: 6px; font-weight: bold; cursor: pointer; }
+        button:hover { opacity: 0.9; }
 
-        /* Analytics Cards */
-        .card-container { display: flex; gap: 20px; margin-bottom: 30px; }
-        .card { background: white; padding: 25px; border-radius: 10px; flex: 1; box-shadow: 0 4px 6px rgba(0,0,0,0.05); border-top: 4px solid #3498db; }
-        .card h3 { margin-top: 0; color: #7f8c8d; font-size: 14px; text-transform: uppercase; }
-        .card .value { font-size: 28px; font-weight: bold; color: #2c3e50; }
-        .card.danger { border-top: 4px solid #e74c3c; }
-        .card.danger .value { color: #e74c3c; }
+        /* CSS Grid Layouts */
+        .grid-4 { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; margin-bottom: 24px; }
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 24px; }
 
-        /* Layout Grid for Tables */
-        .grid { display: flex; gap: 20px; }
-        .column-main { flex: 2; }
-        .column-side { flex: 1; }
+        /* KPI Cards */
+        .card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; padding: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
+        .card-label { font-size: 12px; font-weight: bold; text-transform: uppercase; color: var(--text-muted); margin-bottom: 8px; }
+        .card-val { font-size: 28px; font-weight: bold; color: var(--primary); }
+        .card-sub { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
+        
+        /* Colored Borders for KPIs */
+        .border-accent { border-left: 4px solid var(--accent); }
+        .border-warning { border-left: 4px solid var(--warning); }
+        .border-danger { border-left: 4px solid var(--danger); }
+        .border-success { border-left: 4px solid var(--success); }
 
         /* Tables */
-        h2 { color: #2c3e50; font-size: 18px; margin-bottom: 10px; }
-        table { width: 100%; background: white; border-collapse: collapse; box-shadow: 0 4px 6px rgba(0,0,0,0.05); border-radius: 8px; overflow: hidden; }
-        th, td { padding: 12px 15px; text-align: left; border-bottom: 1px solid #ecf0f1; font-size: 14px; }
-        th { background-color: #2c3e50; color: white; font-weight: 500; }
-        tr:hover { background-color: #f9f9f9; }
+        .section-title { font-size: 16px; font-weight: bold; margin-bottom: 12px; color: var(--primary); }
+        table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--border); }
+        th { background: #f1f5f9; color: var(--text-muted); }
+        .badge { display: inline-block; padding: 3px 8px; border-radius: 12px; font-size: 11px; font-weight: bold; background: #e2e8f0; }
+
+        /* Interactive Tools */
+        .tool-box { background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; padding: 20px; }
+        .slider-group { display: flex; align-items: center; gap: 16px; margin: 16px 0; }
+        .callout { background: #eff6ff; border-left: 4px solid var(--accent); padding: 12px 16px; border-radius: 0 6px 6px 0; font-size: 14px; margin-top: 12px; }
     </style>
 </head>
 <body>
 
-    <div class="dashboard">
-        <div class="header">
+<div class="container">
+    <header>
+        <div class="brand">
             <h1>UPI SpendSense</h1>
-            <div class="upload-section">
-                <input type="file" id="csv-file" accept=".csv">
-                <button onclick="uploadCSV()">Import Statement</button>
-            </div>
+            <p>Spending Behaviour & Leakage Intelligence</p>
         </div>
-        
-        <!-- Summary Cards -->
-        <div class="card-container">
-            <div class="card">
-                <h3>Total Spent</h3>
-                <div class="value" id="total-spent">₹0.00</div>
-            </div>
-            <div class="card">
-                <h3>Micro-Transactions (≤ ₹100)</h3>
-                <div class="value" id="micro-spent">₹0.00</div>
-            </div>
-            <div class="card danger">
-                <h3>Micro Leakage %</h3>
-                <div class="value" id="leakage-percent">0%</div>
-            </div>
+        <div class="upload-card">
+            <input type="file" id="csvFileInput" accept=".csv">
+            <button onclick="handleFileUpload()" id="uploadBtn">Import Statement</button>
         </div>
+    </header>
 
-        <div class="grid">
-            <!-- Main Transactions Table -->
-            <div class="column-main">
-                <h2>Recent Transactions</h2>
+    <!-- KPI Cards -->
+    <div class="grid-4">
+        <div class="card border-accent">
+            <div class="card-label">Total Spend</div>
+            <div class="card-val" id="kpiTotal">₹0.00</div>
+            <div class="card-sub" id="kpiTotalCount">0 transactions</div>
+        </div>
+        <div class="card border-warning">
+            <div class="card-label">Micro-Spending (≤ ₹100)</div>
+            <div class="card-val" id="kpiMicro">₹0.00</div>
+            <div class="card-sub" id="kpiMicroCount">0 micro-transactions</div>
+        </div>
+        <div class="card border-danger">
+            <div class="card-label">Leakage Score</div>
+            <div class="card-val" id="kpiScore">0/100</div>
+            <div class="card-sub" id="kpiScoreRating">Calculating...</div>
+        </div>
+        <div class="card border-success">
+            <div class="card-label">Micro-Spend Share</div>
+            <div class="card-val" id="kpiLeakagePct">0%</div>
+            <div class="card-sub">of total outgoing capital</div>
+        </div>
+    </div>
+
+    <!-- Charts -->
+    <div class="grid-2">
+        <div class="card">
+            <div class="section-title">Month-over-Month Dynamics</div>
+            <canvas id="momChart" height="200"></canvas>
+        </div>
+        <div class="card">
+            <div class="section-title">Category Distribution</div>
+            <canvas id="categoryChart" height="200"></canvas>
+        </div>
+    </div>
+
+    <!-- Intelligence Tables -->
+    <div class="grid-2">
+        <div class="card">
+            <div class="section-title">Vampire Habits (Recurring)</div>
+            <div style="max-height: 240px; overflow-y: auto;">
                 <table>
-                    <thead>
-                        <tr>
-                            <th>Date</th>
-                            <th>Note</th>
-                            <th>Category</th>
-                            <th>Amount</th>
-                        </tr>
-                    </thead>
-                    <tbody id="transaction-table">
-                        <!-- JS injects rows here -->
-                    </tbody>
+                    <thead><tr><th>Merchant</th><th>Amount</th><th>Freq</th><th>Total</th></tr></thead>
+                    <tbody id="habitsTableBody"></tbody>
                 </table>
             </div>
-
-            <!-- Category Breakdown Table -->
-            <div class="column-side">
-                <h2>Category Breakdown</h2>
+        </div>
+        <div class="card">
+            <div class="section-title">Spending Anomalies</div>
+            <div style="max-height: 240px; overflow-y: auto;">
                 <table>
-                    <thead>
-                        <tr>
-                            <th>Category</th>
-                            <th>Total</th>
-                        </tr>
-                    </thead>
-                    <tbody id="category-table">
-                        <!-- JS injects rows here -->
-                    </tbody>
+                    <thead><tr><th>Date</th><th>Merchant</th><th>Amount</th><th>Reason</th></tr></thead>
+                    <tbody id="anomalyTableBody"></tbody>
                 </table>
             </div>
         </div>
     </div>
 
-    <script>
-        // 1. Fetch Analytics Data
-        fetch('/api/analytics')
-            .then(response => response.json())
-            .then(data => {
-                document.getElementById('total-spent').innerText = '₹' + data.total_spent.toFixed(2);
-                document.getElementById('micro-spent').innerText = '₹' + data.micro_spent.toFixed(2);
-                document.getElementById('leakage-percent').innerText = data.leakage_percentage + '%';
-            });
+    <!-- Interactive Modules -->
+    <div class="grid-2">
+        <div class="tool-box">
+            <div class="section-title">Life-Energy View</div>
+            <p style="font-size: 12px; color: var(--text-muted);">Translates spending into working hours (160h/month).</p>
+            <div class="slider-group">
+                <label style="font-size: 13px; font-weight: bold;">Monthly Income (₹):</label>
+                <input type="number" id="incomeInput" value="30000" step="5000" onchange="calculateLifeEnergy()" style="padding: 6px; flex: 1;">
+            </div>
+            <div class="callout" id="lifeEnergyOutput">Waiting for data...</div>
+        </div>
 
-        // 2. Fetch Category Breakdown
-        fetch('/api/analytics/categories')
-            .then(response => response.json())
-            .then(data => {
-                const tbody = document.getElementById('category-table');
-                data.data.forEach(cat => {
-                    tbody.innerHTML += `<tr>
-                        <td>${cat.category}</td>
-                        <td><strong>₹${cat.total_spent.toFixed(2)}</strong></td>
-                    </tr>`;
-                });
-            });
+        <div class="tool-box">
+            <div class="section-title">What-If Savings Simulator</div>
+            <p style="font-size: 12px; color: var(--text-muted);">Project savings by reducing micro-purchases.</p>
+            <div class="slider-group">
+                <label style="font-size: 13px; font-weight: bold;">Reduction: <span id="reductionLabel">25%</span></label>
+                <input type="range" id="reductionSlider" min="5" max="75" step="5" value="25" oninput="handleSliderChange(this.value)">
+            </div>
+            <div class="callout" id="whatIfOutput">Waiting for data...</div>
+        </div>
+    </div>
 
-        // 3. Fetch Transaction Data
-        fetch('/api/transactions')
-            .then(response => response.json())
-            .then(data => {
-                const tbody = document.getElementById('transaction-table');
-                data.data.forEach(txn => {
-                    const dateObj = new Date(txn.txn_date);
-                    const formattedDate = dateObj.toLocaleDateString();
-                    tbody.innerHTML += `<tr>
-                        <td>${formattedDate}</td>
-                        <td>${txn.note}</td>
-                        <td><span style="background:#ecf0f1; padding:3px 8px; border-radius:12px; font-size:12px;">${txn.category}</span></td>
-                        <td><strong>₹${txn.amount}</strong></td>
-                    </tr>`;
-                });
-            });
+    <!-- Raw Data -->
+    <div class="card">
+        <div class="section-title">Recent Transactions</div>
+        <div style="max-height: 300px; overflow-y: auto;">
+            <table>
+                <thead><tr><th>Date</th><th>Merchant</th><th>Note</th><th>Category</th><th>Source</th><th>Amount</th></tr></thead>
+                <tbody id="transactionTableBody"></tbody>
+            </table>
+        </div>
+    </div>
+</div>
 
-        // 4. Handle CSV Upload seamlessly
-        function uploadCSV() {
-            const fileInput = document.getElementById('csv-file');
-            const file = fileInput.files[0];
-            
-            if (!file) {
-                alert("Please select a CSV file first!");
-                return;
-            }
+<script>
+    // Global variable to store micro-spending for the interactive calculators
+    let globalMicroSpent = 0;
+    
+    // Store chart instances so we can destroy and redraw them when new data is uploaded
+    let momChartInstance = null;
+    let catChartInstance = null;
 
-            const formData = new FormData();
-            formData.append('file', file);
+    // 1. Initialize Dashboard when the page loads
+    document.addEventListener("DOMContentLoaded", () => {
+        refreshDashboard();
+    });
 
-            // Change button text to show it's working
-            const btn = document.querySelector('.upload-section button');
-            btn.innerText = "Uploading...";
+    // 2. Fetch everything in parallel for maximum speed
+    async function refreshDashboard() {
+        await Promise.all([
+            fetchSummary(),
+            fetchLeakageScore(),
+            fetchMonthlyData(),
+            fetchCategories(),
+            fetchHabits(),
+            fetchAnomalies(),
+            fetchTransactions()
+        ]);
+        // Run calculators after data is loaded
+        calculateLifeEnergy();
+        calculateWhatIf(document.getElementById('reductionSlider').value);
+    }
 
-            fetch('/api/import-csv', {
-                method: 'POST',
-                body: formData
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.status === 'success') {
-                    alert(`Upload Complete!\nImported: ${data.imported}\nDuplicates Skipped: ${data.rejected}`);
-                    window.location.reload(); // Refresh the page to show new data!
-                } else {
-                    alert("Error: " + data.message);
-                    btn.innerText = "Import Statement";
-                }
-            })
-            .catch(error => {
-                alert("System Error: " + error);
-                btn.innerText = "Import Statement";
+    async function fetchSummary() {
+        const res = await fetch('/api/analytics/summary');
+        const data = await res.json();
+        if (data.status === 'success') {
+            globalMicroSpent = data.micro_spent;
+            document.getElementById('kpiTotal').innerText = `₹${data.total_spent.toLocaleString('en-IN', {minimumFractionDigits: 2})}`;
+            document.getElementById('kpiTotalCount').innerText = `${data.total_count} transactions`;
+            document.getElementById('kpiMicro').innerText = `₹${data.micro_spent.toLocaleString('en-IN', {minimumFractionDigits: 2})}`;
+            document.getElementById('kpiMicroCount').innerText = `${data.micro_count} micro-transactions`;
+            document.getElementById('kpiLeakagePct').innerText = `${data.leakage_percentage}%`;
+        }
+    }
+
+    async function fetchLeakageScore() {
+        const res = await fetch('/api/analytics/leakage-score');
+        const data = await res.json();
+        if (data.status === 'success') {
+            document.getElementById('kpiScore').innerText = `${data.score}/100`;
+            document.getElementById('kpiScoreRating').innerText = data.rating;
+        }
+    }
+
+    async function fetchMonthlyData() {
+        const res = await fetch('/api/analytics/monthly');
+        const json = await res.json();
+        if (json.status === 'success' && json.data.length > 0) {
+            const labels = json.data.map(d => d.month);
+            const totalData = json.data.map(d => d.total_spent);
+            const microData = json.data.map(d => d.micro_spent);
+
+            const ctx = document.getElementById('momChart').getContext('2d');
+            if (momChartInstance) momChartInstance.destroy(); // Prevent chart overlapping
+
+            momChartInstance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        { label: 'Total Spend (₹)', data: totalData, backgroundColor: '#3b82f6' },
+                        { label: 'Micro-Spend (₹)', data: microData, backgroundColor: '#f59e0b' }
+                    ]
+                },
+                options: { responsive: true }
             });
         }
-    </script>
+    }
+
+    async function fetchCategories() {
+        const res = await fetch('/api/analytics/categories');
+        const json = await res.json();
+        if (json.status === 'success' && json.data.length > 0) {
+            const labels = json.data.map(d => d.category);
+            const data = json.data.map(d => d.total_spent);
+
+            const ctx = document.getElementById('categoryChart').getContext('2d');
+            if (catChartInstance) catChartInstance.destroy();
+
+            catChartInstance = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: data,
+                        backgroundColor: ['#10b981', '#3b82f6', '#f59e0b', '#8b5cf6', '#ec4899', '#64748b']
+                    }]
+                },
+                options: { responsive: true, plugins: { legend: { position: 'right' } } }
+            });
+        }
+    }
+
+    async function fetchHabits() {
+        const res = await fetch('/api/analytics/habits');
+        const json = await res.json();
+        const tbody = document.getElementById('habitsTableBody');
+        tbody.innerHTML = '';
+
+        if (json.status === 'success' && json.data.length > 0) {
+            json.data.forEach(h => {
+                tbody.innerHTML += `<tr>
+                    <td><strong>${h.merchant}</strong></td>
+                    <td>₹${h.amount.toFixed(2)}</td>
+                    <td><span class="badge" style="background:#fef3c7; color:#b45309;">${h.frequency}x</span></td>
+                    <td><strong>₹${h.total_cost.toFixed(2)}</strong></td>
+                </tr>`;
+            });
+        } else {
+            tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;">No recurring patterns detected.</td></tr>';
+        }
+    }
+
+    async function fetchAnomalies() {
+        const res = await fetch('/api/analytics/anomalies');
+        const json = await res.json();
+        const tbody = document.getElementById('anomalyTableBody');
+        tbody.innerHTML = '';
+
+        if (json.status === 'success' && json.data.length > 0) {
+            json.data.forEach(a => {
+                tbody.innerHTML += `<tr>
+                    <td>${a.date}</td>
+                    <td><strong>${a.merchant}</strong></td>
+                    <td><span class="badge" style="background:#fee2e2; color:#b91c1c;">₹${a.amount.toFixed(2)}</span></td>
+                    <td style="font-size: 11px;">${a.explanation}</td>
+                </tr>`;
+            });
+        } else {
+            tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;">No anomalies found.</td></tr>';
+        }
+    }
+
+    async function fetchTransactions() {
+        const res = await fetch('/api/transactions');
+        const json = await res.json();
+        const tbody = document.getElementById('transactionTableBody');
+        tbody.innerHTML = '';
+
+        if (json.status === 'success' && json.data.length > 0) {
+            json.data.forEach(t => {
+                const d = new Date(t.txn_date).toLocaleDateString('en-IN');
+                tbody.innerHTML += `<tr>
+                    <td>${d}</td>
+                    <td><strong>${t.merchant}</strong></td>
+                    <td>${t.note}</td>
+                    <td><span class="badge">${t.category}</span></td>
+                    <td>${t.source}</td>
+                    <td><strong>₹${parseFloat(t.amount).toFixed(2)}</strong></td>
+                </tr>`;
+            });
+        }
+    }
+
+    // 3. Interactive Calculators
+    function calculateLifeEnergy() {
+        const income = parseFloat(document.getElementById('incomeInput').value) || 30000;
+        const hourlyRate = income / 160.0; // Assume 160 work hours per month
+        const hours = (globalMicroSpent / hourlyRate).toFixed(1);
+        document.getElementById('lifeEnergyOutput').innerHTML = `
+            At an estimated rate of <strong>₹${hourlyRate.toFixed(2)}/hour</strong>, your micro-spending equates to <strong>${hours} hours</strong> of your monthly working life.
+        `;
+    }
+
+    function handleSliderChange(val) {
+        document.getElementById('reductionLabel').innerText = `${val}%`;
+        calculateWhatIf(val);
+    }
+
+    async function calculateWhatIf(reduction) {
+        // We use the Python API to do the math to demonstrate full-stack integration
+        const res = await fetch('/api/analytics/what-if', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ reduction_percentage: reduction, micro_spent: globalMicroSpent })
+        });
+        const data = await res.json();
+        if (data.status === 'success') {
+            document.getElementById('whatIfOutput').innerHTML = `
+                Monthly Liquidity Saved: <strong>₹${data.monthly_savings.toLocaleString('en-IN')}</strong><br>
+                Annual Projected Capital: <strong>₹${data.annual_savings.toLocaleString('en-IN')}</strong>
+            `;
+        }
+    }
+
+    // 4. Secure CSV Upload Handler
+    async function handleFileUpload() {
+        const fileInput = document.getElementById('csvFileInput');
+        const file = fileInput.files[0];
+        if (!file) {
+            alert("Please choose a CSV statement file first.");
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append('file', file);
+
+        const btn = document.getElementById('uploadBtn');
+        btn.innerText = "Ingesting...";
+        btn.disabled = true;
+
+        try {
+            const res = await fetch('/api/transactions/import', { method: 'POST', body: formData });
+            const data = await res.json();
+            if (data.status === 'success') {
+                alert(`Import Completed!\nImported: ${data.imported}\nDuplicates Skipped: ${data.duplicates_skipped}\nInvalid Rows: ${data.invalid_rows}`);
+                await refreshDashboard(); // Instantly redraw everything!
+            } else {
+                alert(`Upload Failed: ${data.message}`);
+            }
+        } catch (err) {
+            alert(`System Error: ${err}`);
+        } finally {
+            btn.innerText = "Import Statement";
+            btn.disabled = false;
+            fileInput.value = ""; // Reset the file input
+        }
+    }
+</script>
+
 </body>
 </html>
